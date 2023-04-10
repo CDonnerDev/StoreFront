@@ -6,6 +6,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using StoreFront.DATA.EF.Models;
+using Microsoft.AspNetCore.Authorization;
+using System.Drawing;
+using StoreFront.UI.MVC.Utilities;
+
 
 namespace StoreFront.UI.MVC.Controllers
 {
@@ -13,16 +17,27 @@ namespace StoreFront.UI.MVC.Controllers
     {
         private readonly StoreFront2Context _context;
 
-        public ProductsController(StoreFront2Context context)
+        private readonly IWebHostEnvironment _webHostEnvironment;
+
+        public ProductsController(StoreFront2Context context, IWebHostEnvironment webHostEnvironment)
         {
             _context = context;
+            _webHostEnvironment = webHostEnvironment;
         }
 
         // GET: Products
+        [AllowAnonymous]
         public async Task<IActionResult> Index()
         {
-            var storeFront2Context = _context.Products.Include(p => p.Category).Include(p => p.Status).Include(p => p.Supplier);
-            return View(await storeFront2Context.ToListAsync());
+            var products = _context.Products.Include(p => p.Category).Include(p => p.Status).Include(p => p.Supplier);
+            return View(await products.ToListAsync());
+        }
+
+        public async Task<IActionResult> TiledProducts()
+        {
+            var products = _context.Products.Where(p => !p.IsDiscontinued)
+                .Include(p => p.Category).Include(p => p.Supplier).Include(p => p.Status);
+            return View(await products.ToListAsync());
         }
 
         // GET: Products/Details/5
@@ -47,6 +62,7 @@ namespace StoreFront.UI.MVC.Controllers
         }
 
         // GET: Products/Create
+        [Authorize(Roles = "Admin")]
         public IActionResult Create()
         {
             ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "CategoryName");
@@ -60,10 +76,51 @@ namespace StoreFront.UI.MVC.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create([Bind("ProductId,ProductName,ProductPrice,ProductDescription,CategoryId,SupplierId,StatusId,ProductImage,UnitsInStock,IsDiscontinued")] Product product)
         {
             if (ModelState.IsValid)
             {
+
+                #region File Upload - Create
+
+                if (product.Image != null)
+                {
+
+                    string ext = Path.GetExtension(product.Image.FileName);
+
+                    string[] validExts = { ".jpeg", ".jpg", ".gif", ".png" };
+
+                    if (validExts.Contains(ext.ToLower()) && product.Image.Length < 4_194_303)
+                    {
+                        product.ProductImage = Guid.NewGuid() + ext;
+
+                        string webRootPath = _webHostEnvironment.WebRootPath;
+
+                        string fullImagePath = webRootPath + "/images/";
+
+                        using (var memoryStream = new MemoryStream())
+                        {
+                            await product.Image.CopyToAsync(memoryStream);
+                            using (var img = Image.FromStream(memoryStream))
+                            {
+                                int maxImageSize = 500;
+                                int maxThumbSize = 100;
+
+                                ImageUtility.ResizeImage(fullImagePath, product.ProductImage, img, maxImageSize, maxThumbSize);
+                            }
+                        }
+                    }
+
+                }
+                else
+                {
+                    product.ProductImage = "noimage.png";
+                }
+
+                #endregion
+
+
                 _context.Add(product);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
@@ -75,6 +132,7 @@ namespace StoreFront.UI.MVC.Controllers
         }
 
         // GET: Products/Edit/5
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null || _context.Products == null)
@@ -98,6 +156,7 @@ namespace StoreFront.UI.MVC.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int id, [Bind("ProductId,ProductName,ProductPrice,ProductDescription,CategoryId,SupplierId,StatusId,ProductImage,UnitsInStock,IsDiscontinued")] Product product)
         {
             if (id != product.ProductId)
@@ -107,6 +166,50 @@ namespace StoreFront.UI.MVC.Controllers
 
             if (ModelState.IsValid)
             {
+
+                #region EDIT File Upload
+                //retain old image file name so we can delete if a new file was uploaded
+                string oldImageName = product.ProductImage;
+
+                //Check if the user uploaded a file
+                if (product.Image != null)
+                {
+                    //get the file's extension
+                    string ext = Path.GetExtension(product.Image.FileName);
+
+                    //list valid extensions
+                    string[] validExts = { ".jpeg", ".jpg", ".png", ".gif" };
+
+                    //check the file's extension against the list of valid extensions
+                    if (validExts.Contains(ext.ToLower()) && product.Image.Length < 4_194_303)
+                    {
+                        //generate a unique file name
+                        product.ProductImage = Guid.NewGuid() + ext;
+                        //build our file path to save the image
+                        string webRootPath = _webHostEnvironment.WebRootPath;
+                        string fullPath = webRootPath + "/img/";
+
+                        //Delete the old image
+                        if (oldImageName != "noimage.png")
+                        {
+                            ImageUtility.Delete(fullPath, oldImageName);
+                        }
+
+                        //Save the new image to webroot
+                        using (var memoryStream = new MemoryStream())
+                        {
+                            await product.Image.CopyToAsync(memoryStream);
+                            using (var img = Image.FromStream(memoryStream))
+                            {
+                                int maxImageSize = 500;
+                                int maxThumbSize = 100;
+                                ImageUtility.ResizeImage(fullPath, product.ProductImage, img, maxImageSize, maxThumbSize);
+                            }
+                        }
+
+                    }
+                }
+                #endregion
                 try
                 {
                     _context.Update(product);

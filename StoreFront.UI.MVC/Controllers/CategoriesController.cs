@@ -6,9 +6,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using StoreFront.DATA.EF.Models;
+using Microsoft.AspNetCore.Authorization;
+using System.Drawing;
+
 
 namespace StoreFront.UI.MVC.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class CategoriesController : Controller
     {
         private readonly StoreFront2Context _context;
@@ -21,7 +25,9 @@ namespace StoreFront.UI.MVC.Controllers
         // GET: Categories
         public async Task<IActionResult> Index()
         {
-              return View(await _context.Categories.ToListAsync());
+            return _context.Categories != null ?
+                  View(await _context.Categories.ToListAsync()) :
+                  Problem("Entity set 'StoreFront2Context.Categories' is null.");
         }
 
         // GET: Categories/Details/5

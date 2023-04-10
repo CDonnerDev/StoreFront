@@ -1,4 +1,8 @@
-﻿<!DOCTYPE html>
+﻿@using Microsoft.AspNetCore.Identity
+@inject SignInManager<IdentityUser> signInManager
+
+
+<!DOCTYPE html>
 <html lang="zxx">
 
 <head>
@@ -32,19 +36,11 @@
   
     <!-- Header Section Begin -->
     <header class="header">
-        <div class="header__top">
-            <div class="container">
-                <div class="row">
-                   
-                   
-                </div>
-            </div>
-        </div>
         <div class="container">
             <div class="row">
                 <div class="col-lg-3">
                     <div class="header__logo">
-                        <a href="./index.html"><img src="img/logo.png" alt=""></a>
+                        <a href="./index.html"><img src="img/" alt=""></a>
                     </div>
                 </div>
                 <div class="col-lg-6">
@@ -52,24 +48,62 @@
                         <ul>
                             <li class="active"><a href="/">Home</a></li>
                             <li><a href="@Url.Action("Index", "Products")">Products</a></li>
-                           @* @if (User.IsInRole("User"))
+
+                            @if (User.IsInRole("Admin"))
                             {
+                                
+                                <li><a href="@Url.Action("ListUsers", "Administration")">Users</a></li>
+                                <li><a href="@Url.Action("ListRoles", "Administration")">Roles</a></li>
+                                <li><a href="@Url.Action("Index", "Suppliers")">Suppliers</a></li>
+                                <li><a href="@Url.Action("Index", "Categories")">Categories</a></li>
+                            }
 
-
+                           @* @if (User.IsInRole("Admin"))
+                            {
                                 <li class="nav-item dropdown">
                                     <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="true">
-                                        <span class="nav-label">Admin <span class="caret"></span>
+                                        <span class="nav-label">
+                                            Admin
+                                            <span class="fa-caret-down"></span>
+                                        </span>
                                     </a>
                                     <ul class="dropdown-menu">
-                                        <li><a asp-action="ListUsers" asp-controller="Administration">Users</a></li>
-                                        <li><a asp-action="ListRoles" asp-controller="Administration">Roles</a></li>
-                                        <li><a asp-action="Index" asp-controller="Suppliers">Suppliers</a></li>
-                                        <li><a asp-action="Index" asp-controller="Categories">Categories</a></li>
+                                        <li><a href="@Url.Action("ListUsers", "Administration")">Users</a></li>
+                                        <li><a href="@Url.Action("ListRoles", "Administration")">Roles</a></li>
+                                        <li><a href="@Url.Action("Index", "Suppliers")">Suppliers</a></li>
+                                        <li><a href="@Url.Action("Index", "Categories")">Categories</a></li>
+
+
+
                                     </ul>
                                 </li>
                             }*@
+                          @* @if (User.IsInRole("Admin"))
+                            {
+                            //Only displays the HTML inside of these curly braces when a user is logged in with the Admin role
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="true">
+                                        <span class="nav-label">
+                                            Admin
+                                            <span class="caret"></span>
+                                        </span>
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        <li><a href="@Url.Action("ListUsers", "Administration")">Users</a></li>
+                                        <li><a href="@Url.Action("ListRoles", "Administration")">Roles</a></li>
+                                        <li>
+                                            <a href="@Url.Action("Index", "Suppliers")">Suppliers</a>
+                                        </li>
+                                        <li>
+                                            <a href="@Url.Action("Index", "Categories")">Categories</a>
+                                        </li>
+
+                                    </ul>
+                                </li>
+
+                            }*@
                            
-                            <li><a href="./contact.html">Contact</a></li>
+                            <li><a href="@Url.Action("Contact", "Home")">Contact</a></li>
                         </ul>
                     </nav>
                 </div>
@@ -92,9 +126,7 @@
             <div class="row">
                 <div class="col-lg-3 col-md-6 col-sm-6">
                     <div class="footer__about">
-                        <div class="footer__about__logo">
-                            <a href="./index.html"><img src="~/img/logo.png" alt=""></a>
-                        </div>
+                       
                         <ul>
                             <li>Address: 60-49 Road 11378 New York</li>
                             <li>Phone: +65 11.188.888</li>

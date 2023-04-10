@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using StoreFront.DATA.EF.Models;
+using Microsoft.AspNetCore.Authorization;
+using System.Drawing;
 
 namespace StoreFront.UI.MVC.Controllers
 {
